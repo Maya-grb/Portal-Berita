@@ -14,13 +14,28 @@ class NewsController extends Controller
     public function index()
     {
         $news = News::with('category', 'user')->latest()->paginate(10);
-        return view('news.index', compact('news'));
+        return view('admin.news.index', compact('news'));
+    }
+
+    public function getNewsJson($id)
+    {
+        $news = News::with('category')->findOrFail($id);
+
+        return response()->json([
+            'id' => $news->id,
+            'title' => $news->title,
+            'content' => $news->content,
+            'image' => $news->image ? asset('storage/news_images/' . $news->image) : null,
+            'category' => $news->category->name ?? 'Umum',
+            'created_at' => $news->created_at->format('d F Y'),
+            'updated_at' => $news->updated_at->format('d F Y')
+        ]);
     }
 
     public function create()
     {
         $categories = Category::all();
-        return view('news.create', compact('categories'));
+        return view('admin.news.create', compact('categories'));
     }
 
     public function store(Request $request)
@@ -42,13 +57,13 @@ class NewsController extends Controller
         ]);
 
         return redirect()->route('news.index')
-                         ->with('success', 'Berita berhasil ditambahkan.');
+            ->with('success', 'Berita berhasil ditambahkan.');
     }
 
     public function edit(News $news)
     {
         $categories = Category::all();
-        return view('news.edit', compact('news', 'categories'));
+        return view('admin.news.update', compact('news', 'categories'));
     }
 
     public function update(Request $request, News $news)
@@ -60,20 +75,18 @@ class NewsController extends Controller
             'image'       => 'nullable|string',
         ]);
 
-        $image = $news->image; // ✅ Default pakai gambar lama
+        $image = $news->image; //Default pakai gambar lama
 
-        // ✅ Jika checkbox hapus gambar dicentang
         if ($request->has('delete_image')) {
             if ($news->image) {
-                Storage::disk('public')->delete('news_images/' . $news->image); // ✅ Fix: hapus 'storage/' di depan
+                Storage::disk('public')->delete('news_images/' . $news->image);
             }
             $image = null;
         }
 
-        // ✅ Jika ada gambar baru
         if ($request->image && $request->image !== $news->image) {
             if ($news->image) {
-                Storage::disk('public')->delete('news_images/' . $news->image); // ✅ Fix: hapus 'storage/' di depan
+                Storage::disk('public')->delete('news_images/' . $news->image);
             }
             $image = $request->image;
         }
@@ -83,12 +96,12 @@ class NewsController extends Controller
             'slug'        => Str::slug($request->title) . '-' . time(),
             'category_id' => $request->category_id,
             'content'     => $request->content,
-            'image'       => $image, // ✅ Pakai variabel $image bukan $request->image ?? $news->image
+            'image'       => $image, // 
             'user_id'     => auth()->id() ?? 1,
         ]);
 
         return redirect()->route('news.index')
-                         ->with('success', 'Berita berhasil diperbarui.');
+            ->with('success', 'Berita berhasil diperbarui.');
     }
 
     public function destroy(News $news)
@@ -100,7 +113,7 @@ class NewsController extends Controller
         $news->delete();
 
         return redirect()->route('news.index')
-                         ->with('success', 'Berita berhasil dihapus.');
+            ->with('success', 'Berita berhasil dihapus.');
     }
 
     public function uploadImage(Request $request)

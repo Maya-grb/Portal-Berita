@@ -1,4 +1,8 @@
-@extends('layouts.app')
+@extends('admin.master')
+
+@section('title', 'Data Kategori')
+@section('page-title', 'Kategori Berita')
+@section('breadcrumb', 'Kategori')
 
 @section('content')
     <h1 class="mb-4">Daftar Berita</h1>
