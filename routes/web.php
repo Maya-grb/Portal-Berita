@@ -4,16 +4,14 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 
-// ==================== PUBLIC ROUTES ====================
+// Public routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/news/{news}', [NewsController::class, 'show'])->name('news.show');
-Route::get('/category/{id}/news', [NewsController::class, 'byCategory'])->name('category.news');
 Route::get('/news/{id}/json', [NewsController::class, 'getNewsJson'])->name('news.json');
+Route::get('/category/{id}/news', [NewsController::class, 'byCategory'])->name('category.news');
 
-// ==================== AUTHENTICATION ROUTES ====================
+// Guest routes (login only)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -21,14 +19,9 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// ==================== ADMIN ROUTES ====================
+// Admin routes (protected)
 Route::middleware('auth')->group(function () {
-    // Category Management
     Route::resource('categories', CategoryController::class);
-    
-    // News Management (exclude show because already defined in public)
     Route::resource('news', NewsController::class)->except(['show']);
-    
-    // Upload image for summernote
     Route::post('/news/upload-image', [NewsController::class, 'uploadImage'])->name('news.uploadImage');
 });

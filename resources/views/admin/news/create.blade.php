@@ -90,6 +90,7 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+        // Inisialisasi Summernote
         $('#summernote').summernote({
             height: 400,
             lang: 'id-ID',
@@ -101,19 +102,31 @@
                 ['color', ['color']],
                 ['para', ['ul', 'ol', 'paragraph']],
                 ['table', ['table']],
-                ['insert', ['link', 'picture']],
+                ['insert', ['link', 'picture', 'video']],
                 ['view', ['fullscreen', 'codeview', 'help']]
             ],
             callbacks: {
                 onImageUpload: function(files) {
                     uploadImage(files[0]);
+                },
+                onMediaDelete: function(target) {
+                    // Hapus gambar dari hidden input jika gambar dihapus dari editor
+                    const imageUrl = target.attr('src');
+                    if (imageUrl) {
+                        // Extract filename from URL
+                        const filename = imageUrl.split('/').pop();
+                        if ($('#image').val() === filename) {
+                            $('#image').val('');
+                        }
+                    }
                 }
             }
         });
     });
 
     function uploadImage(file) {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        // Validasi tipe file
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         const maxSize = 2 * 1024 * 1024; // 2MB
 
         if (!allowedTypes.includes(file.type)) {
@@ -159,7 +172,12 @@
             success: function(response) {
                 Swal.close();
                 if (response.url) {
-                    $('#summernote').summernote('insertImage', response.url);
+                    // Insert image ke summernote
+                    $('#summernote').summernote('insertImage', response.url, function($image) {
+                        $image.attr('data-filename', response.filename);
+                    });
+                    
+                    // Simpan filename ke hidden input
                     $('#image').val(response.filename);
                     
                     Swal.fire({
@@ -173,10 +191,14 @@
             },
             error: function(xhr) {
                 Swal.close();
+                let errorMessage = 'Gagal mengupload gambar. Silakan coba lagi.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal!',
-                    text: 'Gagal mengupload gambar. Silakan coba lagi.'
+                    text: errorMessage
                 });
             }
         });
